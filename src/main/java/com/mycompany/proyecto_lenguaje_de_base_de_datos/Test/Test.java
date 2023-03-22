@@ -7,7 +7,7 @@ package com.mycompany.proyecto_lenguaje_de_base_de_datos.Test;
 
 /**
  *
- * @author jonha
+ * @author jonha test
  */
 public class Test {
     
