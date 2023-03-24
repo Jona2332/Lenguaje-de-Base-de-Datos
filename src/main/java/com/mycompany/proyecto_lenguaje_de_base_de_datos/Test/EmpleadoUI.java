@@ -57,7 +57,7 @@ public class EmpleadoUI extends JFrame {
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         // Carga inicial de los datos en la tabla
-        try {
+       /* try {
             List<Empleado> empleados = empleadoDAO.getAllEmpleados();
             for (Empleado empleado : empleados) {
                 model.addRow(new Object[]{empleado.getId(), empleado.getName(), empleado.getEmail()});
@@ -114,7 +114,7 @@ public class EmpleadoUI extends JFrame {
                     ex.printStackTrace();
                 }
             }
-        });
+        });*/
 
     }
 }

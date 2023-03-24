@@ -14,7 +14,7 @@ public class EmpleadoDAO {
         this.connection = connection;
     }
 
-    public List<Empleado> getAllEmpleados() throws SQLException {
+    /*public List<Empleado> getAllEmpleados() throws SQLException {
         List<Empleado> empleados = new ArrayList<>();
 
         try (PreparedStatement statement = this.connection.prepareStatement("SELECT * FROM empleados");
@@ -54,5 +54,5 @@ public class EmpleadoDAO {
             statement.setInt(1, empleado.getId());
             statement.executeUpdate();
         }
-    }
+    }*/
 }

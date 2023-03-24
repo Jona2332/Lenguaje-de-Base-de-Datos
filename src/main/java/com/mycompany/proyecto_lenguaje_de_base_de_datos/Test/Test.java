@@ -23,7 +23,7 @@ public class Test {
                 EmpleadoDAO empleadoDAO = new EmpleadoDAO(connection);
 
                 // Creación de la interfaz gráfica de usuario
-                EmpleadoUI empleadoUI = new EmpleadoUI();
+                //EmpleadoUI empleadoUI = new EmpleadoUI();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
