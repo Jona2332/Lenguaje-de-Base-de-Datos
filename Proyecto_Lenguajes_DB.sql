@@ -1,29 +1,11 @@
 ALTER SESSION SET "_ORACLE_SCRIPT" = TRUE;
 
--- Crear tabla Producto
-CREATE TABLE Producto (
-  codigo_producto INT PRIMARY KEY,
-  nombre_producto VARCHAR(50),
-  precio_compra FLOAT
-);
-
--- Crear tabla Empresa
-CREATE TABLE Empresa (
-  id_empresa INT PRIMARY KEY,
-  nombre_empresa VARCHAR(50),
-  ubicacion_empresa VARCHAR(50)
-);
-
--- Crear tabla Puesto
-CREATE TABLE Puesto (
-  id_puesto INT PRIMARY KEY,
-  nombre_puesto VARCHAR(50),
-  descripcion_puesto VARCHAR(255)
-);
+-------------------------------------------------------------------------------------------------CLIENTES--------------------------------------------------------------------------------------------------
 
 -- Crear tabla Cliente
 CREATE TABLE Cliente (
   id_cliente INT PRIMARY KEY,
+  cedula VARCHAR(20),
   nombre VARCHAR(50),
   primer_apellido VARCHAR(50),
   segundo_apellido VARCHAR(50),
@@ -31,68 +13,111 @@ CREATE TABLE Cliente (
   telefono VARCHAR(15)
 );
 
--- Crear tabla Empleado
-CREATE TABLE Empleado (
-  id_empleado INT PRIMARY KEY,
-  nombre VARCHAR(50),
-  primer_apellido VARCHAR(50),
-  segundo_apellido VARCHAR(50),
-  salario FLOAT,
-  id_puesto INT,
-  FOREIGN KEY (id_puesto) REFERENCES Puesto(id_puesto)
+CREATE OR REPLACE PROCEDURE listar_clientes (p_cursor OUT SYS_REFCURSOR) AS
+BEGIN
+    OPEN p_cursor FOR SELECT * FROM Cliente;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al listar los clientes: ' || SQLERRM);
+END;
+
+-- Procedimiento Insertar clientes
+CREATE OR REPLACE PROCEDURE insertar_cliente(
+    id_cliente_in IN INT,
+	cedula_in IN VARCHAR2,
+    nombre_in IN VARCHAR2,
+    primer_apellido_in IN VARCHAR2,
+    segundo_apellido_in IN VARCHAR2,
+    direccion_in IN VARCHAR2,
+    telefono_in IN VARCHAR2
+) AS
+BEGIN
+    INSERT INTO Cliente (id_cliente, cedula, nombre, primer_apellido, segundo_apellido, direccion, telefono)
+    VALUES (id_cliente_in, cedula_in, nombre_in, primer_apellido_in, segundo_apellido_in, direccion_in, telefono_in);
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('El cliente ha sido insertado exitosamente.');
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('Error al insertar el cliente: ' || SQLERRM);
+END;
+
+-- Procedimiento Modificar clientes
+CREATE OR REPLACE PROCEDURE modificar_cliente(
+    id_cliente_in IN INT,
+    nombre_in IN VARCHAR2,
+	cedula_in IN VARCHAR2,
+    primer_apellido_in IN VARCHAR2,
+    segundo_apellido_in IN VARCHAR2,
+    direccion_in IN VARCHAR2,
+    telefono_in IN VARCHAR2
+) AS
+BEGIN
+    UPDATE Cliente SET
+        nombre = nombre_in,
+		cedula = cedula_in,
+        primer_apellido = primer_apellido_in,
+        segundo_apellido = segundo_apellido_in,
+        direccion = direccion_in,
+        telefono = telefono_in
+    WHERE id_cliente = id_cliente_in;
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('El cliente ha sido modificado exitosamente.');
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('Error al modificar el cliente: ' || SQLERRM);
+END;
+
+-- Procedimiento Eliminar clientes
+CREATE OR REPLACE PROCEDURE eliminar_cliente(
+    id_cliente_in IN INT
+) AS
+BEGIN
+    DELETE FROM Cliente WHERE id_cliente = id_cliente_in;
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('El cliente ha sido eliminado exitosamente.');
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('Error al eliminar el cliente: ' || SQLERRM);
+END;
+
+
+------------------------------------------------------------------------------------------LOGIN--------------------------------------------------------------------------------------------------------------
+
+--Tabla Login
+CREATE TABLE usuarios (
+  id NUMBER(10) PRIMARY KEY,
+  username VARCHAR2(50) NOT NULL,
+  password VARCHAR2(50) NOT NULL,
+  rol VARCHAR2(20) NOT NULL
 );
 
--- Crear tabla Venta
-CREATE TABLE Venta (
-  id_venta INT PRIMARY KEY,
-  id_empleado INT,
-  id_cliente INT,
-  fecha DATE,
-  monto FLOAT,
-  FOREIGN KEY (id_empleado) REFERENCES Empleado(id_empleado),
-  FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente)
-);
+--Inserts de prueba
+INSERT INTO usuarios (id, username, password, rol) VALUES (1, 'admin', 'admin123', 'administrador');
+INSERT INTO usuarios (id, username, password, rol) VALUES (2, 'cliente1', 'cliente123', 'cliente');
+INSERT INTO usuarios (id, username, password, rol) VALUES (3, 'cliente2', 'cliente123', 'cliente');
 
--- Crear tabla Detalle_Venta
-CREATE TABLE Detalle_Venta (
-  id_detalle_venta INT PRIMARY KEY,
-  id_venta INT,
-  codigo_producto INT,
-  cantidad INT,
-  descuento FLOAT,
-  FOREIGN KEY (id_venta) REFERENCES Venta(id_venta),
-  FOREIGN KEY (codigo_producto) REFERENCES Producto(codigo_producto)
-);
+--Procedimeinto login
+CREATE OR REPLACE PROCEDURE login_proc (
+    p_username IN VARCHAR2,
+    p_password IN VARCHAR2,
+    p_rol OUT VARCHAR2
+) AS
+BEGIN
+    SELECT rol INTO p_rol
+    FROM usuarios
+    WHERE username = p_username AND password = p_password;
+END;
 
--- Crear tabla Compra
-CREATE TABLE Compra (
-  id_compra INT PRIMARY KEY,
-  id_empleado INT,
-  id_empresa INT,
-  monto FLOAT,
-  fecha DATE,
-  FOREIGN KEY (id_empleado) REFERENCES Empleado(id_empleado),
-  FOREIGN KEY (id_empresa) REFERENCES Empresa(id_empresa)
-);
+-------------------------------------------------------------------------------------------------------PRODUCTOS--------------------------------------------------------------------------------------------------
 
--- Crear tabla Detalle_Compra
-CREATE TABLE Detalle_Compra (
-  id_detalle_compra INT PRIMARY KEY,
-  id_compra INT,
-  codigo_producto INT,
-  cantidad INT,
-  precio_compra FLOAT,
-  FOREIGN KEY (codigo_producto) REFERENCES Producto(codigo_producto),
-FOREIGN KEY (id_compra) REFERENCES Compra(id_compra)
-);
-
--- Crear tabla Contacto_Empresa
-CREATE TABLE Contacto_Empresa (
-  id_contacto INT PRIMARY KEY,
-  id_empresa INT,
-  nombre_contacto VARCHAR(50),
-  telefono VARCHAR(15),
-  FOREIGN KEY (id_empresa) REFERENCES Empresa(id_empresa)
+-- Crear tabla Producto
+CREATE TABLE Producto (
+  codigo_producto INT PRIMARY KEY,
+  nombre_producto VARCHAR(50),
+  precio_compra FLOAT
 );
 
 CREATE OR REPLACE PROCEDURE InsertarProducto(
@@ -130,17 +155,13 @@ EXCEPTION
         ROLLBACK;
 END ModificarProducto;
 
-CREATE OR REPLACE PROCEDURE ListarProductos
-IS
+CREATE OR REPLACE PROCEDURE ListarProductos (p_cursor OUT SYS_REFCURSOR) AS
 BEGIN
-    FOR prod IN (SELECT * FROM Producto)
-    LOOP
-        DBMS_OUTPUT.PUT_LINE('Código de Producto: ' || prod.codigo_producto || ', Nombre del Producto: ' || prod.nombre_producto || ', Precio de Compra: ' || prod.precio_compra);
-    END LOOP;
+    OPEN p_cursor FOR SELECT * FROM Producto;
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Ocurrió un error al listar los productos: ' || SQLERRM);
-END ListarProductos;
+        DBMS_OUTPUT.PUT_LINE('Error al listar los productos: ' || SQLERRM);
+END;
 
 CREATE OR REPLACE PROCEDURE EliminarProducto(
     p_codigo_producto IN INT
@@ -155,6 +176,166 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Ocurrió un error al eliminar el producto: ' || SQLERRM);
         ROLLBACK;
 END EliminarProducto;
+
+
+
+--------------------------------------------------------------------------------------------EMPLEADOS------------------------------------------------------------------------------------------------------
+-- Crear tabla Puesto
+CREATE TABLE Puesto (
+  id_puesto INT PRIMARY KEY,
+  nombre_puesto VARCHAR(50),
+  descripcion_puesto VARCHAR(255)
+);
+
+-- Crear tabla Empleado
+CREATE TABLE Empleado (
+  id_empleado INT PRIMARY KEY,
+  nombre VARCHAR(50),
+  primer_apellido VARCHAR(50),
+  segundo_apellido VARCHAR(50),
+  salario FLOAT,
+  id_puesto INT,
+  FOREIGN KEY (id_puesto) REFERENCES Puesto(id_puesto)
+);
+
+CREATE OR REPLACE PROCEDURE insertar_puesto(
+  id_puesto IN INT,
+  nombre_puesto IN VARCHAR2,
+  descripcion_puesto IN VARCHAR2
+) AS
+BEGIN
+  INSERT INTO Puesto(id_puesto, nombre_puesto, descripcion_puesto)
+  VALUES(id_puesto, nombre_puesto, descripcion_puesto);
+  COMMIT;
+END;
+
+CREATE OR REPLACE PROCEDURE modificar_puesto(
+  id_puesto_modificar IN INT,
+  nombre_puesto_modificar IN VARCHAR2,
+  descripcion_puesto_modificar IN VARCHAR2
+) AS
+BEGIN
+  UPDATE Puesto
+  SET nombre_puesto = nombre_puesto_modificar, descripcion_puesto = descripcion_puesto_modificar
+  WHERE id_puesto = id_puesto_modificar;
+  COMMIT;
+END;
+
+CREATE OR REPLACE PROCEDURE listar_puestos AS
+BEGIN
+  FOR puesto IN (SELECT * FROM Puesto)
+  LOOP
+    DBMS_OUTPUT.PUT_LINE(puesto.id_puesto || ' | ' || puesto.nombre_puesto || ' | ' || puesto.descripcion_puesto);
+  END LOOP;
+END;
+
+
+
+CREATE OR REPLACE PROCEDURE eliminar_puesto(id_puesto_eliminar IN INT) AS
+BEGIN
+  DELETE FROM Puesto WHERE id_puesto = id_puesto_eliminar;
+  COMMIT;
+END;
+
+CREATE OR REPLACE PROCEDURE insertar_empleado(
+    p_id_empleado IN INT,
+    p_nombre IN VARCHAR2,
+    p_primer_apellido IN VARCHAR2,
+    p_segundo_apellido IN VARCHAR2,
+    p_salario IN FLOAT,
+    p_id_puesto IN INT
+)
+AS
+BEGIN
+    INSERT INTO Empleado(id_empleado, nombre, primer_apellido, segundo_apellido, salario, id_puesto)
+    VALUES (p_id_empleado, p_nombre, p_primer_apellido, p_segundo_apellido, p_salario, p_id_puesto);
+    COMMIT;
+END;
+
+
+CREATE OR REPLACE PROCEDURE modificar_empleado(
+    p_id_empleado IN INT,
+    p_nombre IN VARCHAR2,
+    p_primer_apellido IN VARCHAR2,
+    p_segundo_apellido IN VARCHAR2,
+    p_salario IN FLOAT,
+    p_id_puesto IN INT
+)
+AS
+BEGIN
+    UPDATE Empleado
+    SET nombre = p_nombre,
+        primer_apellido = p_primer_apellido,
+        segundo_apellido = p_segundo_apellido,
+        salario = p_salario,
+        id_puesto = p_id_puesto
+    WHERE id_empleado = p_id_empleado;
+    COMMIT;
+END;
+
+
+
+CREATE OR REPLACE PROCEDURE listar_empleados AS
+   BEGIN
+  FOR empleado IN (SELECT * FROM Empleado)
+  LOOP
+    DBMS_OUTPUT.PUT_LINE(empleado.id_empleado || ' | ' || empleado.nombre || ' | ' || empleado.primer_apellido|| ' | ' || empleado.segundo_apellido || ' | ' || empleado.salario|| ' | ' || empleado.id_puesto);
+  END LOOP;
+END;
+
+
+CREATE OR REPLACE PROCEDURE eliminar_empleado(
+    p_id_empleado IN INT
+)
+AS
+BEGIN
+    DELETE FROM Empleado
+    WHERE id_empleado = p_id_empleado;
+    COMMIT;
+END;
+
+-- Crear secuencia para Empleado
+CREATE SEQUENCE empleado_id_seq START WITH 1 INCREMENT BY 1;
+
+
+-- Crear trigger para Empleado que utiliza la secuencia
+CREATE OR REPLACE TRIGGER empleado_id_trg
+BEFORE INSERT ON Empleado
+FOR EACH ROW
+BEGIN
+    SELECT empleado_id_seq.NEXTVAL INTO :new.id_empleado FROM dual;
+END;
+
+-- Crear secuencia para Puesto
+CREATE SEQUENCE puesto_seq START WITH 1 INCREMENT BY 1;
+
+-- Crear trigger para Puesto que utiliza la secuencia
+CREATE OR REPLACE TRIGGER puesto_trigger
+BEFORE INSERT ON Puesto
+FOR EACH ROW
+BEGIN
+:NEW.id_puesto := puesto_seq.NEXTVAL;
+END;
+
+
+-----------------------------------------------------------------------------------------EMPRESA---------------------------------------------------------------------------------------------------------------
+
+-- Crear tabla Empresa
+CREATE TABLE Empresa (
+  id_empresa INT PRIMARY KEY,
+  nombre_empresa VARCHAR(50),
+  ubicacion_empresa VARCHAR(50)
+);
+
+-- Crear tabla Contacto_Empresa
+CREATE TABLE Contacto_Empresa (
+  id_contacto INT PRIMARY KEY,
+  id_empresa INT,
+  nombre_contacto VARCHAR(50),
+  telefono VARCHAR(15),
+  FOREIGN KEY (id_empresa) REFERENCES Empresa(id_empresa)
+);
+
 
 CREATE OR REPLACE PROCEDURE insertar_empresa(
   id_empresa IN INT,
@@ -196,6 +377,67 @@ BEGIN
   COMMIT;
 END;
 
+CREATE OR REPLACE PROCEDURE insertar_contacto_empresa (
+    p_id_contacto IN Contacto_Empresa.id_contacto%TYPE,
+    p_id_empresa IN Contacto_Empresa.id_empresa%TYPE,
+    p_nombre_contacto IN Contacto_Empresa.nombre_contacto%TYPE,
+    p_telefono IN Contacto_Empresa.telefono%TYPE
+) AS
+BEGIN
+    INSERT INTO Contacto_Empresa (id_contacto, id_empresa, nombre_contacto, telefono)
+    VALUES (p_id_contacto, p_id_empresa, p_nombre_contacto, p_telefono);
+    COMMIT;
+END;
+
+
+CREATE OR REPLACE PROCEDURE modificar_contacto_empresa (
+    p_id_contacto IN Contacto_Empresa.id_contacto%TYPE,
+    p_id_empresa IN Contacto_Empresa.id_empresa%TYPE,
+    p_nombre_contacto IN Contacto_Empresa.nombre_contacto%TYPE,
+    p_telefono IN Contacto_Empresa.telefono%TYPE
+) AS
+BEGIN
+    UPDATE Contacto_Empresa
+    SET id_empresa = p_id_empresa,
+        nombre_contacto = p_nombre_contacto,
+        telefono = p_telefono
+    WHERE id_contacto = p_id_contacto;
+    COMMIT;
+END;
+
+
+CREATE OR REPLACE PROCEDURE listar_contactos_empresa IS
+BEGIN
+FOR contactos IN (SELECT * FROM Contacto_Empresa)
+    LOOP
+     DBMS_OUTPUT.PUT_LINE('ID Contacto Empresa: ' || contactos.id_contacto || ' | ' ||
+                             'ID Empresa: ' || contactos.id_empresa || ' | ' ||
+                             'Nombre Contacto: ' || contactos.nombre_contacto || ' | ' ||
+                             'Telefono Contacto: ' || contactos.telefono);
+END LOOP;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al listar contactos de empresa.');
+END listar_contactos_empresa;
+
+
+CREATE OR REPLACE PROCEDURE eliminar_contacto_empresa (
+    p_id_contacto IN Contacto_Empresa.id_contacto%TYPE
+) AS
+BEGIN
+    DELETE FROM Contacto_Empresa
+    WHERE id_contacto = p_id_contacto;
+    COMMIT;
+END;
+
+----------------------------------------------------------------------------------------PUESTO----------------------------------------------------------------------------------------------------------------
+
+-- Crear tabla Puesto
+CREATE TABLE Puesto (
+  id_puesto INT PRIMARY KEY,
+  nombre_puesto VARCHAR(50),
+  descripcion_puesto VARCHAR(255)
+);
 
 
 CREATE OR REPLACE PROCEDURE insertar_puesto(
@@ -237,149 +479,29 @@ BEGIN
   COMMIT;
 END;
 
+--------------------------------------------------------------------------------------VENTA--------------------------------------------------------------------------------------------------------------------
 
+-- Crear tabla Venta
+CREATE TABLE Venta (
+  id_venta INT PRIMARY KEY,
+  id_empleado INT,
+  id_cliente INT,
+  fecha DATE,
+  monto FLOAT,
+  FOREIGN KEY (id_empleado) REFERENCES Empleado(id_empleado),
+  FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente)
+);
 
-
-CREATE OR REPLACE PROCEDURE insertar_cliente(
-    id_cliente_in IN INT,
-    nombre_in IN VARCHAR2,
-    primer_apellido_in IN VARCHAR2,
-    segundo_apellido_in IN VARCHAR2,
-    direccion_in IN VARCHAR2,
-    telefono_in IN VARCHAR2
-) AS
-BEGIN
-    INSERT INTO Cliente (id_cliente, nombre, primer_apellido, segundo_apellido, direccion, telefono)
-    VALUES (id_cliente_in, nombre_in, primer_apellido_in, segundo_apellido_in, direccion_in, telefono_in);
-    COMMIT;
-    DBMS_OUTPUT.PUT_LINE('El cliente ha sido insertado exitosamente.');
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Error al insertar el cliente: ' || SQLERRM);
-END;
-
-
-CREATE OR REPLACE PROCEDURE modificar_cliente(
-    id_cliente_in IN INT,
-    nombre_in IN VARCHAR2,
-    primer_apellido_in IN VARCHAR2,
-    segundo_apellido_in IN VARCHAR2,
-    direccion_in IN VARCHAR2,
-    telefono_in IN VARCHAR2
-) AS
-BEGIN
-    UPDATE Cliente SET
-        nombre = nombre_in,
-        primer_apellido = primer_apellido_in,
-        segundo_apellido = segundo_apellido_in,
-        direccion = direccion_in,
-        telefono = telefono_in
-    WHERE id_cliente = id_cliente_in;
-    COMMIT;
-    DBMS_OUTPUT.PUT_LINE('El cliente ha sido modificado exitosamente.');
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Error al modificar el cliente: ' || SQLERRM);
-END;
-
-
-CREATE OR REPLACE PROCEDURE listar_clientes AS
-BEGIN
-    FOR cliente IN (SELECT * FROM Cliente)
-    LOOP
-        DBMS_OUTPUT.PUT_LINE('ID: ' || cliente.id_cliente || ' - Nombre: ' || cliente.nombre || 
-                             ' ' || cliente.primer_apellido || ' ' || cliente.segundo_apellido ||
-                             ' - Dirección: ' || cliente.direccion || ' - Teléfono: ' || cliente.telefono);
-    END LOOP;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error al listar los clientes: ' || SQLERRM);
-END;
-
-
-CREATE OR REPLACE PROCEDURE eliminar_cliente(
-    id_cliente_in IN INT
-) AS
-BEGIN
-    DELETE FROM Cliente WHERE id_cliente = id_cliente_in;
-    COMMIT;
-    DBMS_OUTPUT.PUT_LINE('El cliente ha sido eliminado exitosamente.');
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Error al eliminar el cliente: ' || SQLERRM);
-END;
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE insertar_empleado(
-    p_id_empleado IN INT,
-    p_nombre IN VARCHAR2,
-    p_primer_apellido IN VARCHAR2,
-    p_segundo_apellido IN VARCHAR2,
-    p_salario IN FLOAT,
-    p_id_puesto IN INT
-)
-AS
-BEGIN
-    INSERT INTO Empleado(id_empleado, nombre, primer_apellido, segundo_apellido, salario, id_puesto)
-    VALUES (p_id_empleado, p_nombre, p_primer_apellido, p_segundo_apellido, p_salario, p_id_puesto);
-    COMMIT;
-END;
-
-
-CREATE OR REPLACE PROCEDURE modificar_empleado(
-    p_id_empleado IN INT,
-    p_nombre IN VARCHAR2,
-    p_primer_apellido IN VARCHAR2,
-    p_segundo_apellido IN VARCHAR2,
-    p_salario IN FLOAT,
-    p_id_puesto IN INT
-)
-AS
-BEGIN
-    UPDATE Empleado
-    SET nombre = p_nombre,
-        primer_apellido = p_primer_apellido,
-        segundo_apellido = p_segundo_apellido,
-        salario = p_salario,
-        id_puesto = p_id_puesto
-    WHERE id_empleado = p_id_empleado;
-    COMMIT;
-END;
-
-
-
-CREATE OR REPLACE PROCEDURE listar_empleados AS
-BEGIN
-    FOR empleado IN (SELECT * FROM Empleado) LOOP
-        DBMS_OUTPUT.PUT_LINE('ID Empleado: ' || empleado.id_empleado ||
-                             ', Nombre: ' || empleado.nombre ||
-                             ', Primer Apellido: ' || empleado.primer_apellido ||
-                             ', Segundo Apellido: ' || empleado.segundo_apellido ||
-                             ', Salario: ' || empleado.salario ||
-                             ', ID Puesto: ' || empleado.id_puesto);
-    END LOOP;
-END;
-
-
-CREATE OR REPLACE PROCEDURE eliminar_empleado(
-    p_id_empleado IN INT
-)
-AS
-BEGIN
-    DELETE FROM Empleado
-    WHERE id_empleado = p_id_empleado;
-    COMMIT;
-END;
-
-
-
-
+-- Crear tabla Detalle_Venta
+CREATE TABLE Detalle_Venta (
+  id_detalle_venta INT PRIMARY KEY,
+  id_venta INT,
+  codigo_producto INT,
+  cantidad INT,
+  descuento FLOAT,
+  FOREIGN KEY (id_venta) REFERENCES Venta(id_venta),
+  FOREIGN KEY (codigo_producto) REFERENCES Producto(codigo_producto)
+);
 
 
 CREATE OR REPLACE PROCEDURE insertar_venta (
@@ -507,7 +629,29 @@ END Eliminar_Detalle_Venta;
 
 
 
+--------------------------------------------------------------------------------------COMPRA---------------------------------------------------------------------------------------------------------------
 
+-- Crear tabla Compra
+CREATE TABLE Compra (
+  id_compra INT PRIMARY KEY,
+  id_empleado INT,
+  id_empresa INT,
+  monto FLOAT,
+  fecha VARCHAR(20),
+  FOREIGN KEY (id_empleado) REFERENCES Empleado(id_empleado),
+  FOREIGN KEY (id_empresa) REFERENCES Empresa(id_empresa)
+);
+
+-- Crear tabla Detalle_Compra
+CREATE TABLE Detalle_Compra (
+  id_detalle_compra INT PRIMARY KEY,
+  id_compra INT,
+  codigo_producto INT,
+  cantidad INT,
+  precio_compra FLOAT,
+  FOREIGN KEY (codigo_producto) REFERENCES Producto(codigo_producto),
+	FOREIGN KEY (id_compra) REFERENCES Compra(id_compra)
+);
 
 CREATE OR REPLACE PROCEDURE insertar_compra(
   p_id_compra IN Compra.id_compra%TYPE,
@@ -578,13 +722,6 @@ EXCEPTION
     ROLLBACK;
     DBMS_OUTPUT.PUT_LINE('Error al eliminar la compra: ' || SQLERRM);
 END;
-
-
-
-
-
-
-
 
 
 CREATE OR REPLACE PROCEDURE insertar_detalle_compra (
@@ -660,66 +797,6 @@ EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error al listar detalles de compra.');
 END listar_detalle_compra;
-
-
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE insertar_contacto_empresa (
-    p_id_contacto IN Contacto_Empresa.id_contacto%TYPE,
-    p_id_empresa IN Contacto_Empresa.id_empresa%TYPE,
-    p_nombre_contacto IN Contacto_Empresa.nombre_contacto%TYPE,
-    p_telefono IN Contacto_Empresa.telefono%TYPE
-) AS
-BEGIN
-    INSERT INTO Contacto_Empresa (id_contacto, id_empresa, nombre_contacto, telefono)
-    VALUES (p_id_contacto, p_id_empresa, p_nombre_contacto, p_telefono);
-    COMMIT;
-END;
-
-
-CREATE OR REPLACE PROCEDURE modificar_contacto_empresa (
-    p_id_contacto IN Contacto_Empresa.id_contacto%TYPE,
-    p_id_empresa IN Contacto_Empresa.id_empresa%TYPE,
-    p_nombre_contacto IN Contacto_Empresa.nombre_contacto%TYPE,
-    p_telefono IN Contacto_Empresa.telefono%TYPE
-) AS
-BEGIN
-    UPDATE Contacto_Empresa
-    SET id_empresa = p_id_empresa,
-        nombre_contacto = p_nombre_contacto,
-        telefono = p_telefono
-    WHERE id_contacto = p_id_contacto;
-    COMMIT;
-END;
-
-
-CREATE OR REPLACE PROCEDURE listar_contactos_empresa IS
-BEGIN
-FOR contactos IN (SELECT * FROM Contacto_Empresa)
-    LOOP
-     DBMS_OUTPUT.PUT_LINE('ID Contacto Empresa: ' || contactos.id_contacto || ' | ' ||
-                             'ID Empresa: ' || contactos.id_empresa || ' | ' ||
-                             'Nombre Contacto: ' || contactos.nombre_contacto || ' | ' ||
-                             'Telefono Contacto: ' || contactos.telefono);
-END LOOP;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error al listar contactos de empresa.');
-END listar_contactos_empresa;
-
-
-CREATE OR REPLACE PROCEDURE eliminar_contacto_empresa (
-    p_id_contacto IN Contacto_Empresa.id_contacto%TYPE
-) AS
-BEGIN
-    DELETE FROM Contacto_Empresa
-    WHERE id_contacto = p_id_contacto;
-    COMMIT;
-END;
-
 
 
 -- VISTAS 
@@ -1595,4 +1672,9 @@ FOR venta IN ventas_cursor LOOP
 DBMS_OUTPUT.PUT_LINE(venta.id_venta || ' | ' || venta.id_empleado || ' | ' || venta.id_cliente || ' | ' || venta.fecha || ' | ' || venta.monto);
 END LOOP;
 END;
+
+
+
+
+
 
